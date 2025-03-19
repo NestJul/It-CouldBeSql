@@ -1,10 +1,10 @@
 package ru.netology.data;
 
-import lombok.SneakyThrows;
+import org.apache.commons.dbutils.QueryRunner;
+import org.apache.commons.dbutils.handlers.ScalarHandler;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 
 public class SQLHelper {
@@ -20,18 +20,28 @@ public class SQLHelper {
             return null;
     }
 
-    public static String getAuthCode(String user){
+    public static String getAuthCode(DataHelper.AuthInfo authInfo){
         try {
+            QueryRunner runner = new QueryRunner();
             Connection connect = getConnect();
             String authUserCodeSQL = "SELECT a.code FROM auth_codes a, users u WHERE u.login = ? AND a.user_id = u.id ORDER BY created DESC LIMIT 1;";
-            var dataStmt = connect.prepareStatement(authUserCodeSQL);
-            dataStmt.setString(1, user);
-            ResultSet resultSet = dataStmt.executeQuery();
-            if (resultSet.next()) {
-                return  resultSet.getString("code");
-            }
+            return runner.query(connect, authUserCodeSQL, new ScalarHandler<>(), authInfo.getLogin());
         } catch (SQLException ignored) {}
 
         return "";
+    }
+
+    public static void truncateTables(){
+        try {
+            QueryRunner runner = new QueryRunner();
+            Connection connect = getConnect();
+            String truncateSQL = "SET FOREIGN_KEY_CHECKS = 0;\n" +
+                    "TRUNCATE TABLE users;\n" +
+                    "TRUNCATE TABLE cards;\n" +
+                    "TRUNCATE TABLE auth_codes;\n" +
+                    "TRUNCATE TABLE card_transactions;\n" +
+                    "SET FOREIGN_KEY_CHECKS = 1;";
+            runner.execute(connect, truncateSQL);
+        } catch (SQLException ignored) {}
     }
 }

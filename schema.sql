@@ -14,7 +14,7 @@ CREATE TABLE cards
     user_id            CHAR(36)           NOT NULL,
     number             VARCHAR(19) UNIQUE NOT NULL,
     balance_in_kopecks INT                NOT NULL,
-    FOREIGN KEY (user_id) REFERENCES users (id)
+    FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
 );
 
 DROP TABLE IF EXISTS auth_codes;
@@ -24,7 +24,7 @@ CREATE TABLE auth_codes
     user_id CHAR(36)   NOT NULL,
     code    VARCHAR(6) NOT NULL,
     created TIMESTAMP  NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users (id)
+    FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
 );
 
 DROP TABLE IF EXISTS card_transactions;
@@ -36,3 +36,9 @@ CREATE TABLE card_transactions
     amount_in_kopecks INT         NOT NULL,
     created           TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+SET FOREIGN_KEY_CHECKS = 0;
+TRUNCATE TABLE users;
+TRUNCATE TABLE cards;
+TRUNCATE TABLE auth_codes;
+TRUNCATE TABLE card_transactions;
+SET FOREIGN_KEY_CHECKS = 1;

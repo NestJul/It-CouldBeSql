@@ -1,72 +1,58 @@
 package ru.netology.test;
 
-import com.codeborne.selenide.SelenideElement;
+import com.codeborne.selenide.Configuration;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.openqa.selenium.By;
-import org.openqa.selenium.Keys;
+import ru.netology.data.DataHelper;
+import ru.netology.page.DashboardPage;
+import ru.netology.page.LoginPage;
+import ru.netology.page.VerificationPage;
 
 import java.time.Duration;
 
-import static com.codeborne.selenide.Condition.*;
-import static com.codeborne.selenide.Selenide.$;
+import static com.codeborne.selenide.Condition.text;
+import static com.codeborne.selenide.Condition.visible;
 import static com.codeborne.selenide.Selenide.open;
-import static ru.netology.data.DATAHelper.*;
 import static ru.netology.data.SQLHelper.getAuthCode;
 
-class DBUtilsAppTest {
-    @Test
-    void shouldLoginTest() {
-        String username = getValidLogin();
+public class DBUtilsAppTest {
+    @BeforeEach
+    public void run() {
+        Configuration.holdBrowserOpen = true;
         open("http://localhost:9999");
-        SelenideElement body = $("body");
-        SelenideElement form = $("form");
-        clearAndSendKeys(form.$("[data-test-id=login] input"), username);
-        clearAndSendKeys(form.$("[data-test-id=password] input"), getValidPass());
-        form.$(By.className("button_theme_alfa-on-white")).click();
-        body.$(By.className("paragraph_theme_alfa-on-white")).shouldBe(visible, Duration.ofSeconds(15)).shouldHave(text("Необходимо подтверждение"));
-        String authCode = getAuthCode(username);
-        clearAndSendKeys(body.$(By.xpath(".//input[@name=\"code\"]")), authCode);
-        form.$(By.className("button_theme_alfa-on-white")).click();
-        body.$(By.className("heading_theme_alfa-on-white")).shouldBe(visible, Duration.ofSeconds(15)).shouldHave(text("Личный кабинет"));
     }
 
     @Test
-    void shouldNotAuthCodeTest() {
-        String username = getValidLogin();
-        open("http://localhost:9999");
-        SelenideElement body = $("body");
-        SelenideElement form = $("form");
-        clearAndSendKeys(form.$("[data-test-id=login] input"), username);
-        clearAndSendKeys(form.$("[data-test-id=password] input"), getValidPass());
-        form.$(By.className("button_theme_alfa-on-white")).click();
-        body.$(By.className("paragraph_theme_alfa-on-white"))
-                .shouldBe(visible, Duration.ofSeconds(15))
-                .shouldHave(text("Необходимо подтверждение"));
-        String authCode = getInvalidAuth();
-        clearAndSendKeys(body.$(By.xpath(".//input[@name=\"code\"]")), authCode);
-        body.$(By.className("button_theme_alfa-on-white")).click();
-        $("[data-test-id=error-notification] .notification__content")
-                .shouldBe(visible, Duration.ofSeconds(15))
-                .shouldBe(text("Неверно указан код! Попробуйте ещё раз."));
+    public void shouldLogin() {
+        var loginPage = new LoginPage();
+        var authInfo = DataHelper.getAuthInfo();
+        loginPage.login(authInfo);
+        var verificationPage = new VerificationPage();
+        var verificationCode = DataHelper.getVerificationCodeFor(getAuthCode(authInfo));
+        verificationPage.verify(verificationCode);
+        var dashboardPage = new DashboardPage();
     }
 
     @Test
-    void shouldNotLoginTest() {
-        String username = getValidLogin();
-        open("http://localhost:9999");
-        SelenideElement body = $("body");
-        SelenideElement form = $("form");
-        clearAndSendKeys(form.$("[data-test-id=login] input"), username);
-        clearAndSendKeys(form.$("[data-test-id=password] input"), getInvalidPass());
-        form.$(By.className("button_theme_alfa-on-white")).click();
-        $("[data-test-id=error-notification] .notification__content")
+    public void shouldNotLogin() {
+        var loginPage = new LoginPage();
+        var authInfo = DataHelper.getWrongAuthInfo();
+        var errorNotification = loginPage.login(authInfo);
+        errorNotification
                 .shouldBe(visible, Duration.ofSeconds(15))
                 .shouldBe(text("Неверно указан логин или пароль"));
     }
 
-    private void clearAndSendKeys(SelenideElement element, String keysInput) {
-        element.sendKeys(Keys.CONTROL + "a");
-        element.sendKeys(Keys.DELETE);
-        element.setValue(keysInput);
+    @Test
+    public void shouldNotAuthCode() {
+        var loginPage = new LoginPage();
+        var authInfo = DataHelper.getAuthInfo();
+        loginPage.login(authInfo);
+        var verificationPage = new VerificationPage();
+        var verificationCode = DataHelper.getWrongVerificationCodeFor();
+        var errorNotification = verificationPage.verify(verificationCode);
+        errorNotification
+                .shouldBe(visible, Duration.ofSeconds(15))
+                .shouldBe(text("Неверно указан код! Попробуйте ещё раз."));
     }
 }
