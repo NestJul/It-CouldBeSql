@@ -1,6 +1,7 @@
 package ru.netology.test;
 
 import com.codeborne.selenide.Configuration;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import ru.netology.data.DataHelper;
@@ -8,12 +9,9 @@ import ru.netology.page.DashboardPage;
 import ru.netology.page.LoginPage;
 import ru.netology.page.VerificationPage;
 
-import java.time.Duration;
-
-import static com.codeborne.selenide.Condition.text;
-import static com.codeborne.selenide.Condition.visible;
 import static com.codeborne.selenide.Selenide.open;
 import static ru.netology.data.SQLHelper.getAuthCode;
+import static ru.netology.data.SQLHelper.truncateTables;
 
 public class DBUtilsAppTest {
     @BeforeEach
@@ -22,10 +20,15 @@ public class DBUtilsAppTest {
         open("http://localhost:9999");
     }
 
+    @AfterAll
+    static void truncate() {
+        truncateTables();
+    }
+
     @Test
     public void shouldLogin() {
-        var loginPage = new LoginPage();
         var authInfo = DataHelper.getAuthInfo();
+        var loginPage = new LoginPage();
         loginPage.login(authInfo);
         var verificationPage = new VerificationPage();
         var verificationCode = DataHelper.getVerificationCodeFor(getAuthCode(authInfo));
@@ -37,10 +40,8 @@ public class DBUtilsAppTest {
     public void shouldNotLogin() {
         var loginPage = new LoginPage();
         var authInfo = DataHelper.getWrongAuthInfo();
-        var errorNotification = loginPage.login(authInfo);
-        errorNotification
-                .shouldBe(visible, Duration.ofSeconds(15))
-                .shouldBe(text("Неверно указан логин или пароль"));
+        loginPage.login(authInfo);
+        loginPage.checkErrorNotification();
     }
 
     @Test
@@ -50,9 +51,7 @@ public class DBUtilsAppTest {
         loginPage.login(authInfo);
         var verificationPage = new VerificationPage();
         var verificationCode = DataHelper.getWrongVerificationCodeFor();
-        var errorNotification = verificationPage.verify(verificationCode);
-        errorNotification
-                .shouldBe(visible, Duration.ofSeconds(15))
-                .shouldBe(text("Неверно указан код! Попробуйте ещё раз."));
+        verificationPage.verify(verificationCode);
+        verificationPage.checkErrorNotification();
     }
 }

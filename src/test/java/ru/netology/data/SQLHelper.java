@@ -36,10 +36,10 @@ public class SQLHelper {
             QueryRunner runner = new QueryRunner();
             Connection connect = getConnect();
             String truncateSQL = "SET FOREIGN_KEY_CHECKS = 0;\n" +
-                    "TRUNCATE TABLE users;\n" +
                     "TRUNCATE TABLE cards;\n" +
                     "TRUNCATE TABLE auth_codes;\n" +
                     "TRUNCATE TABLE card_transactions;\n" +
+                    "TRUNCATE TABLE users;\n" +
                     "SET FOREIGN_KEY_CHECKS = 1;";
             runner.execute(connect, truncateSQL);
         } catch (SQLException ignored) {}
